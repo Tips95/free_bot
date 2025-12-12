@@ -27,8 +27,8 @@ class Settings(BaseSettings):
     # WhatsApp
     MANAGER_WHATSAPP: str = "+7999-399-57-95"
     
-    # Admin
-    ADMIN_TELEGRAM_ID: Optional[int] = None
+    # Admin (можно указать несколько через запятую)
+    ADMIN_TELEGRAM_IDS: Optional[str] = None  # Например: "95714127,6172571059"
     
     class Config:
         env_file = ".env"

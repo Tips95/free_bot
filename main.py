@@ -15,7 +15,7 @@ from scheduler.tasks import setup_scheduler
 import sys
 
 # Импорты handlers
-from handlers import start, main_menu, subscription, payment
+from handlers import start, main_menu, subscription, payment, admin
 
 # Настройка логирования
 logging.basicConfig(
@@ -58,6 +58,7 @@ async def main():
     dp.include_router(main_menu.router)
     dp.include_router(subscription.router)
     dp.include_router(payment.router)
+    dp.include_router(admin.router)
     
     # Настройка планировщика
     scheduler = setup_scheduler(bot)

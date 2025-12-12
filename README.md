@@ -58,8 +58,8 @@ YOOKASSA_WEBHOOK_URL=https://your-domain.com/webhook  # Опционально
 # WhatsApp менеджера
 MANAGER_WHATSAPP=+7999-399-57-95
 
-# Admin Telegram ID (для уведомлений о бонусах)
-ADMIN_TELEGRAM_ID=123456789  # Опционально
+# Admin Telegram ID (для админ панели и уведомлений о бонусах)
+ADMIN_TELEGRAM_ID=123456789  # Ваш Telegram ID (можно узнать у @userinfobot)
 ```
 
 5. Запустите бота:

@@ -205,22 +205,26 @@ async def check_referral_bonuses_task(bot: Bot):
                         reply_markup=get_main_menu_keyboard(has_active_subscription=has_active),
                     )
                     
-                    # Уведомляем администратора (если указан)
-                    if settings.ADMIN_TELEGRAM_ID:
+                    # Уведомляем администраторов (если указаны)
+                    if settings.ADMIN_TELEGRAM_IDS:
                         try:
-                            admin_id = int(settings.ADMIN_TELEGRAM_ID)
+                            admin_ids = [int(id_str.strip()) for id_str in settings.ADMIN_TELEGRAM_IDS.split(',')]
                             admin_text = (
                                 f"🎁 Новый реферальный бонус!\n\n"
                                 f"Пользователь: @{user.username or 'N/A'} (ID: {user.telegram_id})\n"
                                 f"Активных рефералов: {bonus.active_referrals_count}\n"
                                 f"Нужно выдать подарок — парфюм."
                             )
-                            await bot.send_message(
-                                chat_id=admin_id,
-                                text=admin_text,
-                            )
+                            for admin_id in admin_ids:
+                                try:
+                                    await bot.send_message(
+                                        chat_id=admin_id,
+                                        text=admin_text,
+                                    )
+                                except Exception as e:
+                                    logger.warning(f"Failed to send message to admin {admin_id}: {e}")
                         except (ValueError, TypeError) as e:
-                            logger.warning(f"Invalid ADMIN_TELEGRAM_ID: {e}")
+                            logger.warning(f"Invalid ADMIN_TELEGRAM_IDS: {e}")
                     
                     # Отмечаем бонус как уведомлённый
                     await ReferralService.mark_bonus_notified(
