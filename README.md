@@ -44,7 +44,8 @@ pip install -r requirements.txt
 BOT_TOKEN=your_bot_token_here
 BOT_USERNAME=your_bot_username  # Опционально, будет получен автоматически
 
-# Database (SQLite по умолчанию)
+# Database: по умолчанию используется /data/bot.db (постоянное хранилище при деплое).
+# Для локальной разработки укажите:
 DATABASE_URL=sqlite+aiosqlite:///./bot.db
 
 # YooKassa
@@ -69,6 +70,8 @@ python main.py
 ```
 
 ### Деплой на сервер
+
+**Важно:** по умолчанию БД сохраняется в `/data/bot.db`. Убедитесь, что папка `/data` — это постоянное хранилище (volume), чтобы данные не терялись при пересборке.
 
 **Быстрый старт:**
 ```bash

@@ -117,6 +117,16 @@ async def admin_stats(callback: CallbackQuery):
         result = await session.execute(stmt)
         unique_subscribers = result.scalar() or 0
         
+        # Базовые значения (из конфига): новые данные из БД добавляются к ним
+        total_users += settings.STATS_BASELINE_TOTAL_USERS
+        unique_subscribers += settings.STATS_BASELINE_USERS_WITH_SUBSCRIPTION
+        active_subscriptions += settings.STATS_BASELINE_ACTIVE_SUBSCRIPTIONS
+        total_subscriptions += settings.STATS_BASELINE_TOTAL_SUBSCRIPTIONS
+        successful_payments += settings.STATS_BASELINE_SUCCESSFUL_PAYMENTS
+        total_revenue += settings.STATS_BASELINE_REVENUE
+        total_referrals += settings.STATS_BASELINE_REFERRALS
+        paid_referrals += settings.STATS_BASELINE_PAID_REFERRALS
+        
         text = (
             f"📊 <b>Общая статистика</b>\n\n"
             f"👥 <b>Пользователи:</b>\n"
