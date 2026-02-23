@@ -1,8 +1,8 @@
 """
 Конфигурация приложения
 """
-import os
 from pydantic_settings import BaseSettings
+from pydantic import field_validator
 from typing import Optional
 
 
@@ -17,7 +17,18 @@ class Settings(BaseSettings):
     # Для локальной разработки задайте в .env: DATABASE_URL=sqlite+aiosqlite:///./bot.db
     DATA_DIR: Optional[str] = None
     DATABASE_URL: str = "sqlite+aiosqlite:////data/bot.db"
-    
+
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def normalize_database_url(cls, v: str) -> str:
+        """Если из env пришло 'DATABASE_URL=sqlite+...', оставляем только URL."""
+        if not v or not isinstance(v, str):
+            return v or "sqlite+aiosqlite:////data/bot.db"
+        s = v.strip()
+        if "://" in s and s.upper().startswith("DATABASE_URL="):
+            return s.split("=", 1)[1].strip()
+        return s
+
     # YooKassa
     YOOKASSA_SHOP_ID: str
     YOOKASSA_SECRET_KEY: str
@@ -58,7 +69,6 @@ class Settings(BaseSettings):
         """URL БД: если задан DATA_DIR (напр. /data), используем его для сохранения bot.db"""
         if self.DATA_DIR:
             path = self.DATA_DIR.rstrip("/") + "/bot.db"
-            # Абсолютный путь: sqlite+aiosqlite:////data/bot.db
             return f"sqlite+aiosqlite://{path}" if path.startswith("/") else f"sqlite+aiosqlite:///{path}"
         return self.DATABASE_URL
 
