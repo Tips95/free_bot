@@ -160,3 +160,16 @@ class SubscriptionService:
         subscription = result.scalar_one()
         subscription.reminder_sent = True
         await session.commit()
+
+    @staticmethod
+    async def get_all_active_subscriptions(session: AsyncSession) -> List[Subscription]:
+        """Получить все активные подписки (end_date > now) для отчёта"""
+        now = datetime.utcnow()
+        stmt = select(Subscription).where(
+            and_(
+                Subscription.status == SubscriptionStatus.ACTIVE,
+                Subscription.end_date > now,
+            )
+        ).order_by(Subscription.end_date.asc())
+        result = await session.execute(stmt)
+        return list(result.scalars().all())

@@ -12,6 +12,7 @@ from services.payment_service import PaymentService
 from database.models import ReferralBonusStatus, PaymentStatus, SubscriptionStatus
 from config import settings
 from aiogram import Bot
+from datetime import datetime
 import logging
 
 logger = logging.getLogger(__name__)
@@ -162,6 +163,78 @@ async def check_pending_payments_task(bot: Bot):
         logger.error(f"Error in check_pending_payments_task: {e}")
 
 
+async def daily_active_subscribers_report_task(bot: Bot):
+    """Ежедневная рассылка админам списка всех пользователей с активной подпиской"""
+    if not settings.ADMIN_TELEGRAM_IDS:
+        return
+    try:
+        admin_ids = [int(id_str.strip()) for id_str in settings.ADMIN_TELEGRAM_IDS.split(",")]
+    except (ValueError, TypeError):
+        logger.warning("Invalid ADMIN_TELEGRAM_IDS for daily report")
+        return
+    try:
+        async for session in get_session():
+            from sqlalchemy import select
+            from database.models import User, Tariff
+
+            subscriptions = await SubscriptionService.get_all_active_subscriptions(session=session)
+            lines = []
+            for i, sub in enumerate(subscriptions, 1):
+                stmt = select(User).where(User.id == sub.user_id)
+                result = await session.execute(stmt)
+                user = result.scalar_one_or_none()
+                stmt = select(Tariff).where(Tariff.id == sub.tariff_id)
+                result = await session.execute(stmt)
+                tariff = result.scalar_one_or_none()
+                tariff_name = tariff.name if tariff else "—"
+                end_str = sub.end_date.strftime("%d.%m.%Y") if sub.end_date else "—"
+                fio = " ".join(filter(None, [user.surname, user.name, user.patronymic])).strip() if user else "—"
+                phone = user.phone or "—"
+                username = f"@{user.username}" if user and user.username else "—"
+                tg_id = user.telegram_id if user else "—"
+                lines.append(
+                    f"{i}. {fio} | {phone} | {username} | ID: {tg_id} | {tariff_name} | до {end_str}"
+                )
+            date_str = datetime.utcnow().strftime("%d.%m.%Y %H:%M")
+            header = (
+                f"📋 <b>Отчёт: подписчики с активной подпиской</b>\n"
+                f"Дата: {date_str}\n"
+                f"Всего: {len(subscriptions)}\n\n"
+            )
+            body = "\n".join(lines) if lines else "Нет активных подписок."
+            full_text = header + body
+            max_len = 4096
+            if len(full_text) > max_len:
+                parts = [header]
+                current = []
+                current_len = len(header)
+                for line in lines:
+                    line_ = line + "\n"
+                    if current_len + len(line_) > max_len and current:
+                        parts.append("\n".join(current))
+                        current = []
+                        current_len = 0
+                    current.append(line)
+                    current_len += len(line_)
+                if current:
+                    parts.append("\n".join(current))
+            else:
+                parts = [full_text]
+            for admin_id in admin_ids:
+                try:
+                    for part in parts:
+                        await bot.send_message(
+                            chat_id=admin_id,
+                            text=part,
+                            parse_mode="HTML",
+                        )
+                except Exception as e:
+                    logger.warning(f"Failed to send daily report to admin {admin_id}: {e}")
+            break
+    except Exception as e:
+        logger.error(f"Error in daily_active_subscribers_report_task: {e}")
+
+
 async def check_referral_bonuses_task(bot: Bot):
     """Проверка и уведомление о реферальных бонусах"""
     try:
@@ -246,6 +319,14 @@ def setup_scheduler(bot: Bot) -> AsyncIOScheduler:
     """Настройка планировщика задач"""
     scheduler = AsyncIOScheduler()
     
+    # Ежедневный отчёт админам: список подписчиков с активной подпиской (09:00)
+    scheduler.add_job(
+        daily_active_subscribers_report_task,
+        trigger=CronTrigger(hour=9, minute=0),
+        args=[bot],
+        id="daily_active_subscribers_report",
+        replace_existing=True,
+    )
     # Проверка подписок каждый день в 10:00
     scheduler.add_job(
         check_subscriptions_task,
