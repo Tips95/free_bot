@@ -2,7 +2,7 @@
 Обработчики главного меню
 """
 from aiogram import Router, F
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery, Message, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from database.base import get_session
@@ -156,6 +156,7 @@ async def show_referral_program(callback: CallbackQuery):
 @router.callback_query(F.data == "get_catalog")
 async def get_catalog(callback: CallbackQuery):
     """Показать два варианта каталога — кнопки открывают ссылки на Яндекс.Диск"""
+    await callback.answer()
     text = (
         "📂 <b>Каталог</b>\n\n"
         "Выберите каталог — откроется ссылка на Яндекс.Диск:"
@@ -165,8 +166,10 @@ async def get_catalog(callback: CallbackQuery):
         [InlineKeyboardButton(text=settings.CATALOG_NAME_2, url=settings.CATALOG_LINK_2)],
         [InlineKeyboardButton(text="🔙 Назад", callback_data="back_to_menu")],
     ])
-    await callback.message.edit_text(text, reply_markup=keyboard)
-    await callback.answer()
+    try:
+        await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
+    except Exception:
+        await callback.message.answer(text, reply_markup=keyboard, parse_mode="HTML")
 
 
 @router.callback_query(F.data == "order_perfume")
