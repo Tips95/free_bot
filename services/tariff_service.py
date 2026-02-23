@@ -30,6 +30,13 @@ class TariffService:
         stmt = select(Tariff).where(Tariff.id == tariff_id)
         result = await session.execute(stmt)
         return result.scalar_one_or_none()
+
+    @staticmethod
+    async def get_tariff_by_name(session: AsyncSession, name: str) -> Optional[Tariff]:
+        """Получить тариф по названию (Месячный, Полгода, Годовой)"""
+        stmt = select(Tariff).where(Tariff.name == name)
+        result = await session.execute(stmt)
+        return result.scalar_one_or_none()
     
     @staticmethod
     async def init_default_tariffs(session: AsyncSession):

@@ -107,8 +107,6 @@ async def process_test_payment(callback: CallbackQuery):
 @router.message(F.successful_payment)
 async def process_successful_payment(message: Message):
     """Обработка успешной оплаты"""
-    payment_info = message.successful_payment
-    
     async for session in get_session():
         # Ищем платёж по invoice_payload или другим данным
         # YooKassa может не отправлять invoice_payload, поэтому ищем по другим признакам
@@ -145,42 +143,35 @@ async def process_successful_payment(message: Message):
             status=PaymentStatus.SUCCEEDED,
         )
         
-        # Активируем подписку
+        # Активируем подписку и формируем карточку
+        card_text = ""
+        has_active_subscription = False
         if payment.subscription_id:
             subscription = await SubscriptionService.activate_subscription(
                 session=session,
                 subscription_id=payment.subscription_id,
             )
-            
-            # Загружаем тариф для карточки
             from services.tariff_service import TariffService
             tariff = await TariffService.get_tariff_by_id(
                 session=session,
                 tariff_id=subscription.tariff_id,
             )
             if tariff:
-                subscription.tariff = tariff  # Присваиваем для использования в функции
-            
-            # Отмечаем реферала как оплатившего (если есть)
+                subscription.tariff = tariff
             await ReferralService.mark_referral_as_paid(
                 session=session,
                 referred_user_id=user.id,
             )
-            
-            # Формируем карточку клиента
             card_text = _generate_client_card(user, subscription)
-            
+            has_active_subscription = True
+
         wa_link = f"https://wa.me/{settings.MANAGER_WHATSAPP.lstrip('+').replace('-', '')}"
-        # Отправляем карточку и WhatsApp-номер
-        text = (
-            f"✅ Платёж успешно выполнен!\n\n"
-            f"{card_text}\n\n"
+        text = f"✅ Платёж успешно выполнен!\n\n" + (f"{card_text}\n\n" if card_text else "")
+        text += (
             f"📞 Для заказа парфюма свяжитесь с менеджером:\n"
             f"📱 <a href=\"{wa_link}\">Написать в WhatsApp</a> ({settings.MANAGER_WHATSAPP})"
         )
-        
-        # После оплаты подписка активна, показываем кнопку заказа
-        await message.answer(text, reply_markup=get_main_menu_keyboard(has_active_subscription=True))
+        await message.answer(text, reply_markup=get_main_menu_keyboard(has_active_subscription=has_active_subscription))
         break
 
 
