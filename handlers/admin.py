@@ -32,6 +32,33 @@ def is_admin(user_id: int) -> bool:
         return False
 
 
+@router.message(Command("seed_subscribers"))
+async def cmd_seed_subscribers(message: Message):
+    """Восстановить список подписчиков (только для админов)."""
+    if not is_admin(message.from_user.id):
+        await message.answer("❌ Нет доступа")
+        return
+    await message.answer("⏳ Загружаю список подписчиков...")
+    try:
+        from services.seed_restore import run_seed
+        async for session in get_session():
+            result = await run_seed(session)
+            text = (
+                f"✅ Готово.\n\n"
+                f"Добавлено подписок: {result['added']}\n"
+                f"Пропущено (уже есть): {result['skipped']}"
+            )
+            if result["errors"]:
+                text += f"\n\nОшибки ({len(result['errors'])}):\n" + "\n".join(result["errors"][:10])
+                if len(result["errors"]) > 10:
+                    text += f"\n... и ещё {len(result['errors']) - 10}"
+            await message.answer(text)
+            break
+    except Exception as e:
+        logger.exception("seed_subscribers")
+        await message.answer(f"❌ Ошибка: {e}")
+
+
 @router.message(Command("admin"))
 async def admin_menu(message: Message):
     """Главное меню админ панели"""
