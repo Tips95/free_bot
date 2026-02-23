@@ -15,6 +15,9 @@ def get_main_menu_keyboard(has_active_subscription: bool = False) -> InlineKeybo
     # Разные кнопки для пользователей с подпиской и без
     if has_active_subscription:
         buttons.append([
+            InlineKeyboardButton(text="📂 Получить каталог", callback_data="get_catalog"),
+        ])
+        buttons.append([
             InlineKeyboardButton(text="🔄 Продлить подписку", callback_data="renew_subscription"),
         ])
         buttons.append([

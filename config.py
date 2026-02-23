@@ -30,6 +30,12 @@ class Settings(BaseSettings):
     # Admin (можно указать несколько через запятую)
     ADMIN_TELEGRAM_IDS: Optional[str] = None  # Например: "95714127,6172571059"
     
+    # Ссылки на каталоги (Яндекс.Диск) — показываются подписчикам
+    CATALOG_LINK_1: str = "https://disk.yandex.ru/i/32sab_Y5hmPQHA"  # масляные духи
+    CATALOG_LINK_2: str = "https://disk.yandex.ru/i/uWosSxMs_S2TMw"  # дубайские оригиналы
+    CATALOG_NAME_1: str = "Масляные духи"
+    CATALOG_NAME_2: str = "Дубайские оригиналы"
+    
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

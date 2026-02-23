@@ -153,6 +153,22 @@ async def show_referral_program(callback: CallbackQuery):
         break
 
 
+@router.callback_query(F.data == "get_catalog")
+async def get_catalog(callback: CallbackQuery):
+    """Показать ссылки на каталоги (доступно подписчикам)"""
+    text = (
+        "📂 <b>Каталог</b>\n\n"
+        "Ссылки на каталоги:\n\n"
+        f"1️⃣ <a href=\"{settings.CATALOG_LINK_1}\">{settings.CATALOG_NAME_1}</a>\n"
+        f"2️⃣ <a href=\"{settings.CATALOG_LINK_2}\">{settings.CATALOG_NAME_2}</a>"
+    )
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🔙 Назад", callback_data="back_to_menu")],
+    ])
+    await callback.message.edit_text(text, reply_markup=keyboard)
+    await callback.answer()
+
+
 @router.callback_query(F.data == "order_perfume")
 async def order_perfume(callback: CallbackQuery):
     """Показать WhatsApp-номер менеджера"""
