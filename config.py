@@ -49,13 +49,13 @@ class Settings(BaseSettings):
     CATALOG_NAME_1: str = "Масляные духи"
     CATALOG_NAME_2: str = "Дубайские оригиналы"
     
-    # Базовые значения статистики (добавляются к данным из БД после восстановления/миграции)
-    STATS_BASELINE_TOTAL_USERS: int = 892
-    STATS_BASELINE_USERS_WITH_SUBSCRIPTION: int = 103  # приобрели подписку
-    STATS_BASELINE_ACTIVE_SUBSCRIPTIONS: int = 62
-    STATS_BASELINE_TOTAL_SUBSCRIPTIONS: int = 185
-    STATS_BASELINE_SUCCESSFUL_PAYMENTS: int = 107
-    STATS_BASELINE_REVENUE: float = 33143.0  # ₽
+    # Базовые значения статистики (до удаления БД; после /seed_subscribers подписчиков 903)
+    STATS_BASELINE_TOTAL_USERS: int = 903
+    STATS_BASELINE_USERS_WITH_SUBSCRIPTION: int = 128  # приобрели подписку
+    STATS_BASELINE_ACTIVE_SUBSCRIPTIONS: int = 87
+    STATS_BASELINE_TOTAL_SUBSCRIPTIONS: int = 210
+    STATS_BASELINE_SUCCESSFUL_PAYMENTS: int = 110
+    STATS_BASELINE_REVENUE: float = 34140.0  # ₽
     STATS_BASELINE_REFERRALS: int = 7
     STATS_BASELINE_PAID_REFERRALS: int = 0
     
