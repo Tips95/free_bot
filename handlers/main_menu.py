@@ -156,6 +156,7 @@ async def show_referral_program(callback: CallbackQuery):
 @router.callback_query(F.data == "get_catalog")
 async def get_catalog(callback: CallbackQuery):
     """Показать два варианта каталога — кнопки открывают ссылки на Яндекс.Диск"""
+    from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
     await callback.answer()
     text = (
         "📂 <b>Каталог</b>\n\n"

@@ -73,6 +73,7 @@ async def admin_menu(message: Message):
         [InlineKeyboardButton(text="📦 Подписки", callback_data="admin_subscriptions")],
         [InlineKeyboardButton(text="🎁 Рефералы", callback_data="admin_referrals")],
         [InlineKeyboardButton(text="📋 Список подписчиков", callback_data="admin_subscribers_list")],
+        [InlineKeyboardButton(text="📥 Выгрузить подписчиков (TXT)", callback_data="admin_export_subscribers_txt")],
     ])
     
     await message.answer(
@@ -428,6 +429,7 @@ async def admin_back(callback: CallbackQuery):
         [InlineKeyboardButton(text="📦 Подписки", callback_data="admin_subscriptions")],
         [InlineKeyboardButton(text="🎁 Рефералы", callback_data="admin_referrals")],
         [InlineKeyboardButton(text="📋 Список подписчиков", callback_data="admin_subscribers_list")],
+        [InlineKeyboardButton(text="📥 Выгрузить подписчиков (TXT)", callback_data="admin_export_subscribers_txt")],
     ])
     
     await callback.message.edit_text(
@@ -437,6 +439,51 @@ async def admin_back(callback: CallbackQuery):
         parse_mode="HTML"
     )
     await callback.answer()
+
+
+@router.callback_query(F.data == "admin_export_subscribers_txt")
+async def admin_export_subscribers_txt(callback: CallbackQuery):
+    """Выгрузка списка активных подписчиков в TXT-файл в чат"""
+    if not is_admin(callback.from_user.id):
+        await callback.answer("❌ Нет доступа", show_alert=True)
+        return
+    await callback.answer("⏳ Формирую файл...")
+    from io import BytesIO
+    from aiogram.types import BufferedInputFile
+    from services.tariff_service import TariffService
+
+    async for session in get_session():
+        subscriptions = await SubscriptionService.get_all_active_subscriptions(session=session)
+        lines = []
+        for sub in subscriptions:
+            stmt = select(User).where(User.id == sub.user_id)
+            result = await session.execute(stmt)
+            user = result.scalar_one_or_none()
+            tariff = await TariffService.get_tariff_by_id(session=session, tariff_id=sub.tariff_id)
+            tariff_name = tariff.name if tariff else "—"
+            end_str = sub.end_date.strftime("%d.%m.%Y") if sub.end_date else "—"
+            start_str = sub.start_date.strftime("%d.%m.%Y") if sub.start_date else "—"
+            fio = " ".join(filter(None, [user.surname, user.name, user.patronymic])).strip() if user else "—"
+            if not fio and user:
+                fio = f"{user.first_name or ''} {user.last_name or ''}".strip() or f"ID {user.telegram_id}"
+            phone = user.phone or "—" if user else "—"
+            tg_id = user.telegram_id if user else "—"
+            block = (
+                f"👤 {fio}\n"
+                f"📱 Телефон: {phone}\n"
+                f"🆔 Telegram ID: {tg_id}\n"
+                f"📦 Тариф: {tariff_name}\n"
+                f"📅 Активация: {start_str}\n"
+                f"📅 Окончание: {end_str}\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+            )
+            lines.append(block)
+        content = "\n".join(lines) if lines else "Нет активных подписок.\n"
+        filename = f"subscribers_{datetime.utcnow().strftime('%Y-%m-%d_%H-%M')}.txt"
+        file_bytes = content.encode("utf-8")
+        doc = BufferedInputFile(file_bytes, filename=filename)
+        await callback.message.answer_document(document=doc, caption=f"📥 Активных подписчиков: {len(lines)}")
+        break
 
 
 @router.callback_query(F.data == "admin_subscribers_list")
